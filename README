@@ -1,1 +1,6 @@
-Test!
+Lab Summaries:
+
+Lab 1 - pipeit:
+    This quick progam is intended to be a quick review of systems programming concepts, including
+fork(2), exec(2), pipes, and make(1).
+
