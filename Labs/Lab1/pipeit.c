@@ -17,8 +17,6 @@ int main(int argc, char** argv)
 {
 	//create file descriptior and set up pipe
 	int fd[2];
-	int restore_stdin = dup(STDIN_FILENO);
-	int restore_stdout = dup(STDOUT_FILENO);
 	
 	if(pipe(fd) != 0)
 	{
@@ -36,14 +34,19 @@ int main(int argc, char** argv)
 		//read out to pipe rather than standard out
 		dup2(fd[1],STDOUT_FILENO);
 
-		//list directories and have results sent through pipe
-		execlp("ls","ls",(char*)NULL);
-
 		//close pipes if done
-		close(fd[1]);
+		//close(fd[1]);
 
-		//if no problems return zero
-		return 0;
+		//list directories and have results sent through pipe
+		if (execlp("ls","ls",(char*)NULL) == -1)
+		{
+			perror("Error in ls");
+			return -1;
+			//could also use exit?
+		}
+
+		//after exec program is no longer in control
+		//only include error checking at this point
 	}
 
 	if (fork() == 0) 
@@ -52,7 +55,10 @@ int main(int argc, char** argv)
 		close(fd[1]);
 
 		//create outfile to store results and check for sucessful open
-		int file = open("outfile", O_WRONLY | O_CREAT); 
+		int file = open("outfile", O_RDWR | O_CREAT | O_EXCL, 777); 
+		
+		//FILE *fptr = fopen("output","w+");
+		//int file = fileno(fptr);
 
 		//read in from pipe rather than standard input
 		dup2(fd[0], STDIN_FILENO);
@@ -61,22 +67,22 @@ int main(int argc, char** argv)
 
 		execlp("sort","sort","-r","outfile",(char*)NULL);
 
-		//close pipes
-		close(fd[0]);
-		close(file);
+		//after exec program is no longer in control
+		//only include error checking at this point
+		perror("Error in sort");
+		return -1;
+
 	}
 	//parent process
+
+	close(fd[0]);
+	close(fd[1]);
 
 	//wait for child
 	wait(0);
 	wait(0);
 
-	//restore stdin and stdout, close pipes and files
-	dup2(restore_stdin,STDIN_FILENO);
-	dup2(restore_stdout,STDOUT_FILENO);
-
-	close(fd[0]);
-	close(fd[1]);
-
 	return 0;
 }
+
+//not working, next idea -> error check system calls
