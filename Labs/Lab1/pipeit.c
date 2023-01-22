@@ -64,7 +64,7 @@ int main(int argc, char** argv)
 
         if(file == -1)
         {
-            perror("Error creating file");
+            perror("Error creating or opening file");
             exit(EXIT_FAILURE);
         }
 
